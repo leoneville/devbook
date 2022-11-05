@@ -70,3 +70,31 @@ func (repositorio Usuarios) Buscar(nomeOuNick string) ([]models.Usuario, error) 
 
 	return user, nil
 }
+
+// BuscarPorID tráz um usuário do banco de dados
+func (repositorio Usuarios) BuscarPorID(ID uint64) (models.Usuario, error) {
+	linha, err := repositorio.db.Query(
+		"SELECT id, nome, nick, email, criadoEm FROM usuarios WHERE id = ?",
+		ID,
+	)
+	if err != nil {
+		return models.Usuario{}, err
+	}
+	defer linha.Close()
+
+	var usuario models.Usuario
+
+	if linha.Next() {
+		if err = linha.Scan(
+			&usuario.ID,
+			&usuario.Nome,
+			&usuario.Nick,
+			&usuario.Email,
+			&usuario.CriadoEm,
+		); err != nil {
+			return models.Usuario{}, err
+		}
+	}
+
+	return usuario, nil
+}
