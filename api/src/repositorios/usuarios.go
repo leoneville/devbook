@@ -3,7 +3,6 @@ package repositorios
 import (
 	"api/src/models"
 	"database/sql"
-	"errors"
 	"fmt"
 )
 
@@ -64,10 +63,6 @@ func (repositorio Usuarios) Buscar(nomeOuNick string) ([]models.Usuario, error) 
 		user = append(user, usuario)
 	}
 
-	if len(user) <= 0 {
-		return nil, errors.New("nenhum usuário foi encontrado")
-	}
-
 	return user, nil
 }
 
@@ -108,6 +103,21 @@ func (repositorio Usuarios) Atualizar(ID uint64, usuario models.Usuario) error {
 	defer statement.Close()
 
 	if _, err = statement.Exec(usuario.Nome, usuario.Nick, usuario.Email, ID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Deletar exclui as informações de um usuário no banco de dados
+func (repositorio Usuarios) Deletar(ID uint64) error {
+	statement, err := repositorio.db.Prepare("DELETE FROM usuarios WHERE id = ?")
+	if err != nil {
+		return err
+	}
+	defer statement.Close()
+
+	if _, err = statement.Exec(ID); err != nil {
 		return err
 	}
 
