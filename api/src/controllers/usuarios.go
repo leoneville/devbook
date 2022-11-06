@@ -17,7 +17,7 @@ import (
 
 // CriarUsuario insere um usuário no banco de dados
 func CriarUsuario(w http.ResponseWriter, r *http.Request) {
-	req, err := io.ReadAll(r.Body)
+	corpoRequisicao, err := io.ReadAll(r.Body)
 	if err != nil {
 		respostas.Erro(w, http.StatusUnprocessableEntity, err)
 		return
@@ -25,12 +25,12 @@ func CriarUsuario(w http.ResponseWriter, r *http.Request) {
 
 	var usuario models.Usuario
 
-	if err = json.Unmarshal(req, &usuario); err != nil {
+	if err = json.Unmarshal(corpoRequisicao, &usuario); err != nil {
 		respostas.Erro(w, http.StatusBadRequest, err)
 		return
 	}
 
-	if err = usuario.Preparar(); err != nil {
+	if err = usuario.Preparar("cadastro"); err != nil {
 		respostas.Erro(w, http.StatusBadRequest, err)
 		return
 	}
@@ -106,7 +106,47 @@ func BuscarUsuario(w http.ResponseWriter, r *http.Request) {
 
 // AtualizarUsuario atualiza um usuário no banco de dados
 func AtualizarUsuario(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Atualizando usuário!"))
+	parametros := mux.Vars(r)
+	usuarioID, err := strconv.ParseUint(parametros["usuarioId"], 10, 64)
+	if err != nil {
+		respostas.Erro(w, http.StatusBadRequest, err)
+		return
+	}
+
+	corpoRequisicao, err := io.ReadAll(r.Body)
+	if err != nil {
+		respostas.Erro(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	var usuario models.Usuario
+
+	if err = json.Unmarshal(corpoRequisicao, &usuario); err != nil {
+		if err != nil {
+			respostas.Erro(w, http.StatusBadRequest, err)
+			return
+		}
+	}
+
+	if err = usuario.Preparar("edicao"); err != nil {
+		respostas.Erro(w, http.StatusBadRequest, err)
+		return
+	}
+
+	db, err := banco.Conectar()
+	if err != nil {
+		respostas.Erro(w, http.StatusInternalServerError, err)
+		return
+	}
+	defer db.Close()
+
+	repositorio := repositorios.NovoRepositorioDeUsuarios(db)
+	if err = repositorio.Atualizar(usuarioID, usuario); err != nil {
+		respostas.Erro(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	respostas.JSON(w, http.StatusNoContent, nil)
 }
 
 // DeletarUsuario deleta um usuário no banco de dados
