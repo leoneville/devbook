@@ -8,11 +8,8 @@ import (
 	"net/http"
 )
 
-func init() {
-	config.Carregar()
-}
-
 func main() {
+	config.Carregar()
 	r := router.Gerar()
 
 	fmt.Printf("Escutando na porta %d", config.Porta)
