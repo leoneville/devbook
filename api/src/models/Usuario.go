@@ -31,7 +31,7 @@ func (usuario *Usuario) Preparar(etapa string) error {
 	return nil
 }
 
-func (usuario *Usuario) validar(etapa string) error {
+func (usuario Usuario) validar(etapa string) error {
 	if usuario.Nome == "" {
 		return errors.New("o nome é obrigatório e não pode estar em branco")
 	}

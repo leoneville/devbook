@@ -39,18 +39,18 @@ func (repositorio Usuarios) Criar(usuario models.Usuario) (uint64, error) {
 
 // Buscar traz todos os usuários que atendem um filtro de nome ou nick
 func (repositorio Usuarios) Buscar(nomeOuNick string) ([]models.Usuario, error) {
-	nomeOuNick = fmt.Sprintf("%%%s%%", nomeOuNick)
-	rows, err := repositorio.db.Query("SELECT id, nome, nick, email, criadoEm FROM usuarios WHERE nome LIKE ? OR nick LIKE ?", nomeOuNick, nomeOuNick)
+	nomeOuNick = fmt.Sprintf("%%%s%%", nomeOuNick) //"%nomeOuNick%"
+	linhas, err := repositorio.db.Query("SELECT id, nome, nick, email, criadoEm FROM usuarios WHERE nome LIKE ? OR nick LIKE ?", nomeOuNick, nomeOuNick)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer linhas.Close()
 
 	var user []models.Usuario
 
-	for rows.Next() {
+	for linhas.Next() {
 		var usuario models.Usuario
-		if err = rows.Scan(
+		if err = linhas.Scan(
 			&usuario.ID,
 			&usuario.Nome,
 			&usuario.Nick,
@@ -122,4 +122,26 @@ func (repositorio Usuarios) Deletar(ID uint64) error {
 	}
 
 	return nil
+}
+
+// BuscarPorEmail busca um usuário por Email e retorna seu ID e senha com hash
+func (repositorio Usuarios) BuscarPorEmail(Email string) (models.Usuario, error) {
+	linha, err := repositorio.db.Query("SELECT id, senha FROM usuarios WHERE email = ?", Email)
+	if err != nil {
+		return models.Usuario{}, err
+	}
+	defer linha.Close()
+
+	var usuario models.Usuario
+
+	if linha.Next() {
+		if err = linha.Scan(
+			&usuario.ID,
+			&usuario.Senha,
+		); err != nil {
+			return models.Usuario{}, err
+		}
+	}
+
+	return usuario, nil
 }
