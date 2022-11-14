@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"api/src/autenticacao"
 	"api/src/banco"
 	"api/src/models"
 	"api/src/repositorios"
@@ -118,6 +119,17 @@ func AtualizarUsuario(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	usuarioIDNoToken, err := autenticacao.ExtrairUsuarioID(r)
+	if err != nil {
+		respostas.Erro(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	if usuarioID != usuarioIDNoToken {
+		respostas.Erro(w, http.StatusForbidden, errors.New("não é possível atualizar um usuário que não seja o seu"))
+		return
+	}
+
 	corpoRequisicao, err := io.ReadAll(r.Body)
 	if err != nil {
 		respostas.Erro(w, http.StatusUnprocessableEntity, err)
@@ -161,6 +173,16 @@ func DeletarUsuario(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		respostas.Erro(w, http.StatusBadRequest, err)
 		return
+	}
+
+	usuarioIDNoToken, err := autenticacao.ExtrairUsuarioID(r)
+	if err != nil {
+		respostas.Erro(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	if usuarioID != usuarioIDNoToken {
+		respostas.Erro(w, http.StatusForbidden, errors.New("não é possível deletar um usuário que não seja o seu"))
 	}
 
 	db, err := banco.Conectar()
