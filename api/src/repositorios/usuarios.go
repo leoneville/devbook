@@ -179,8 +179,8 @@ func (repositorio Usuarios) PararDeSeguir(usuarioID, seguidorID uint64) error {
 // BuscarSeguidores traz todos os seguidores de um usuário
 func (repositorio Usuarios) BuscarSeguidores(usuarioID uint64) ([]models.Usuario, error) {
 	linhas, err := repositorio.db.Query(`
-		select u.id, u.nome, u.nick, u.email, u.criadoEm
-		from usuarios u inner join seguidores s on u.id = s.seguidor_id where usuario_id = ?`,
+		SELECT u.id, u.nome, u.nick, u.email, u.criadoEm
+		FROM usuarios u INNER JOIN seguidores s ON u.id = s.seguidor_id WHERE usuario_id = ?`,
 		usuarioID,
 	)
 	if err != nil {
@@ -211,8 +211,8 @@ func (repositorio Usuarios) BuscarSeguidores(usuarioID uint64) ([]models.Usuario
 // BuscarSeguindo traz todos os usuarios que um determinado usuário está seguindo
 func (repositorio Usuarios) BuscarSeguindo(usuarioID uint64) ([]models.Usuario, error) {
 	linhas, err := repositorio.db.Query(`
-		select u.id, u.nome, u.nick, u.email, u.criadoEm
-		from usuarios u inner join seguidores s on u.id = s.usuario_id where seguidor_id = ?`,
+		SELECT u.id, u.nome, u.nick, u.email, u.criadoEm
+		FROM usuarios u INNER JOIN seguidores s ON u.id = s.usuario_id WHERE seguidor_id = ?`,
 		usuarioID,
 	)
 	if err != nil {
@@ -238,4 +238,38 @@ func (repositorio Usuarios) BuscarSeguindo(usuarioID uint64) ([]models.Usuario, 
 	}
 
 	return usuarios, nil
+}
+
+// BuscarSenha traz a senha de um usuário pelo ID
+func (repositorio Usuarios) BuscarSenha(usuarioID uint64) (string, error) {
+	linha, err := repositorio.db.Query("SELECT senha FROM usuarios WHERE id = ?", usuarioID)
+	if err != nil {
+		return "", err
+	}
+	defer linha.Close()
+
+	var usuario models.Usuario
+
+	if linha.Next() {
+		if err = linha.Scan(&usuario.Senha); err != nil {
+			return "", err
+		}
+	}
+
+	return usuario.Senha, nil
+}
+
+// AtualizarSenha altera a senha de um usuário
+func (repositorio Usuarios) AtualizarSenha(usuarioID uint64, senha string) error {
+	statement, err := repositorio.db.Prepare("UPDATE usuarios SET senha = ? WHERE id = ?")
+	if err != nil {
+		return err
+	}
+	defer statement.Close()
+
+	if _, err = statement.Exec(senha, usuarioID); err != nil {
+		return err
+	}
+
+	return nil
 }
