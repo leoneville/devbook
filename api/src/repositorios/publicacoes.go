@@ -136,3 +136,39 @@ func (repositorio publicacoes) Deletar(publicacaoID uint64) error {
 
 	return nil
 }
+
+// BuscarPorUsuario traz todas as publicações de um usuário específico
+func (repositorio publicacoes) BuscarPorUsuario(usuarioID uint64) ([]models.Publicacao, error) {
+	linhas, err := repositorio.db.Query(`
+		SELECT p.*, u.nick from publicacoes p
+		join usuarios u on u.id = p.autor_id
+		where p.autor_id = ?`,
+		usuarioID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer linhas.Close()
+
+	var publicacoes []models.Publicacao
+
+	for linhas.Next() {
+		var publicacao models.Publicacao
+
+		if err = linhas.Scan(
+			&publicacao.ID,
+			&publicacao.Titulo,
+			&publicacao.Conteudo,
+			&publicacao.AutorID,
+			&publicacao.Curtidas,
+			&publicacao.CriadaEm,
+			&publicacao.AutorNick,
+		); err != nil {
+			return nil, err
+		}
+
+		publicacoes = append(publicacoes, publicacao)
+	}
+
+	return publicacoes, nil
+}
