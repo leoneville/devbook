@@ -111,6 +111,11 @@ func BuscarPublicacao(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if publicacao.ID == 0 {
+		respostas.Erro(w, http.StatusNotFound, errors.New("nenhuma publicação encontrada"))
+		return
+	}
+
 	respostas.JSON(w, http.StatusOK, publicacao)
 }
 
@@ -176,5 +181,42 @@ func AtualizarPublicacao(w http.ResponseWriter, r *http.Request) {
 
 // DeletarPublicacao exclui os dados de uma publicação
 func DeletarPublicacao(w http.ResponseWriter, r *http.Request) {
+	usuarioID, err := autenticacao.ExtrairUsuarioID(r)
+	if err != nil {
+		respostas.Erro(w, http.StatusUnauthorized, err)
+		return
+	}
 
+	parametros := mux.Vars(r)
+	publicacaoID, err := strconv.ParseUint(parametros["publicacaoId"], 10, 64)
+	if err != nil {
+		respostas.Erro(w, http.StatusBadRequest, err)
+		return
+	}
+
+	db, err := banco.Conectar()
+	if err != nil {
+		respostas.Erro(w, http.StatusInternalServerError, err)
+		return
+	}
+	defer db.Close()
+
+	repositorio := repositorios.NovoRepositorioDePublicacoes(db)
+	publicacaoSalvaNoBanco, err := repositorio.BuscarPorID(publicacaoID)
+	if err != nil {
+		respostas.Erro(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if publicacaoSalvaNoBanco.AutorID != usuarioID {
+		respostas.Erro(w, http.StatusForbidden, errors.New("não é possível deletar uma publicação que não seja a sua"))
+		return
+	}
+
+	if err = repositorio.Deletar(publicacaoID); err != nil {
+		respostas.Erro(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	respostas.JSON(w, http.StatusNoContent, nil)
 }
