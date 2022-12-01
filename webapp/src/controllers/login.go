@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
+	"webapp/src/config"
+	"webapp/src/models"
 	"webapp/src/respostas"
 )
 
@@ -22,14 +23,24 @@ func FazerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response, err := http.Post("http://localhost:5000/login", "application/json", bytes.NewBuffer(usuario))
+	url := fmt.Sprintf("%s/login", config.APIURL)
+	response, err := http.Post(url, "application/json", bytes.NewBuffer(usuario))
 	if err != nil {
 		respostas.JSON(w, http.StatusInternalServerError, respostas.ErroAPI{Erro: err.Error()})
 		return
 	}
 	defer response.Body.Close()
 
-	token, _ := io.ReadAll(response.Body)
+	if response.StatusCode >= 400 {
+		respostas.TratarStatusCodeDeErro(w, response)
+		return
+	}
 
-	fmt.Println(response.StatusCode, string(token))
+	var dadosAutenticacao models.DadosAutenticacao
+	if err = json.NewDecoder(response.Body).Decode(&dadosAutenticacao); err != nil {
+		respostas.JSON(w, http.StatusUnprocessableEntity, respostas.ErroAPI{Erro: err.Error()})
+		return
+	}
+
+	respostas.JSON(w, http.StatusOK, nil)
 }
