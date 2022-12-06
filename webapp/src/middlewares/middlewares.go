@@ -18,7 +18,7 @@ func Logger(next http.HandlerFunc) http.HandlerFunc {
 func Autenticar(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if _, err := cookies.Ler(r); err != nil {
-			http.Redirect(w, r, "/login", http.StatusMovedPermanently)
+			http.Redirect(w, r, "/login", http.StatusFound)
 			return
 		}
 		next(w, r)
