@@ -2,3 +2,4 @@
 .idea
 .env
 /api/sql
+/webapp/tmp
