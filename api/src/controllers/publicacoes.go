@@ -80,11 +80,6 @@ func BuscarPublicacoes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(publicacoes) <= 0 {
-		respostas.Erro(w, http.StatusNotFound, errors.New("nenhuma publicação encontrada"))
-		return
-	}
-
 	respostas.JSON(w, http.StatusOK, publicacoes)
 }
 
