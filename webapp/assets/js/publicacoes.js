@@ -19,7 +19,11 @@ function criarPublicacao(evento) {
     }).done(function() {
         window.location = "/home";
     }).fail(function() {
-        alert("Erro ao criar a publicacao");
+        Swal.fire(
+            "Ops...",
+            "Erro ao criar a publicacao",
+            "error"
+        );
     })
 } 
 
@@ -46,7 +50,11 @@ function curtirPublicacao(evento) {
 
 
     }).fail(function() {
-        alert("Erro ao curtir publicacao")
+        Swal.fire(
+            "Ops...",
+            "Erro ao curtir a publicacao",
+            "error"
+        );
     }).always(function() {
         elementoClicado.prop('disabled', false);
     })
@@ -75,7 +83,11 @@ function descurtirPublicacao(evento) {
 
 
     }).fail(function() {
-        alert("Erro ao descurtir publicacao")
+        Swal.fire(
+            "Ops...",
+            "Erro ao descurtir a publicacao",
+            "error"
+        );
     }).always(function() {
         elementoClicado.prop('disabled', false);
     })
@@ -94,10 +106,20 @@ function atualizarPublicacao() {
             conteudo: $('#conteudo').val(),
         }
     }).done(function() {
-        alert("Publicação editada com sucesso!");
-        window.location = "/home";
+        Swal.fire(
+            "Sucesso!",
+            "Publicação criada com sucesso!",
+            "success"
+        ).then(function() {
+            window.location = "/home"
+        })
+
     }).fail(function() {
-        alert("Erro ao editar a publicação!")
+        Swal.fire(
+            "Ops...",
+            "Erro ao editar a publicacao",
+            "error"
+        );
     }).always(function() {
         $('#atualizar-publicacao').prop('disabled', false)
     })
@@ -106,20 +128,37 @@ function atualizarPublicacao() {
 function deletarPublicacao(evento) {
     evento.preventDefault()
 
-    const elementoClicado = $(evento.target)
-    const publicacao = elementoClicado.closest('div')
-    const publicacaoId = publicacao.data('publicacao-id')
+    Swal.fire({
+        title: "Atenção!",
+        text: "Tem certeza que deseja excluir essa publicação?",
+        confirmButtonText: "Excluir",
+        showCancelButton: true,
+        cancelButtonText: "Cancelar",
+        icon: "warning"
+    }).then(function(confirmacao) {
+        if (!confirmacao.value) {
+            return;
+        }
 
-    elementoClicado.prop('disabled', true)
+        const elementoClicado = $(evento.target)
+        const publicacao = elementoClicado.closest('div')
+        const publicacaoId = publicacao.data('publicacao-id')
 
-    $.ajax({
-        url: `/publicacoes/${publicacaoId}`,
-        method: "DELETE"
-    }).done(function() {
-        publicacao.fadeOut("slow", function() {
-            $(this).remove()
+        elementoClicado.prop('disabled', true)
+
+        $.ajax({
+            url: `/publicacoes/${publicacaoId}`,
+            method: "DELETE"
+        }).done(function() {
+            publicacao.fadeOut("slow", function() {
+                $(this).remove()
+            })
+        }).fail(function() {
+            Swal.fire(
+                "Ops...",
+                "Erro ao excluir a publicacao",
+                "error"
+            );
         })
-    }).fail(function() {
-        alert("Erro ao excluir a publicação")
     })
 }
