@@ -71,11 +71,6 @@ func BuscarUsuarios(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(usuarios) <= 0 {
-		respostas.Erro(w, http.StatusNotFound, errors.New("nenhum usuário foi encontrado"))
-		return
-	}
-
 	respostas.JSON(w, http.StatusOK, usuarios)
 }
 
