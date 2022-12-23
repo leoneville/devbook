@@ -97,7 +97,7 @@ func CarregarPaginaDeEdicaoDePublicacao(w http.ResponseWriter, r *http.Request) 
 	utils.ExecutarTemplate(w, "atualizar-publicacao.html", publicacao)
 }
 
-// CarregarPaginaDeUsuarios renderiza a pagina com os usuários que atendem o filtro passado
+// CarregarPaginaDeUsuarios renderiza a página com os usuários que atendem o filtro passado
 func CarregarPaginaDeUsuarios(w http.ResponseWriter, r *http.Request) {
 	nomeOuNick := strings.ToLower(r.URL.Query().Get("usuario"))
 	url := fmt.Sprintf("%s/usuarios?usuario=%s", config.APIURL, nomeOuNick)
@@ -121,4 +121,17 @@ func CarregarPaginaDeUsuarios(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.ExecutarTemplate(w, "usuarios.html", usuarios)
+}
+
+// CarregarPerfilDoUsuario renderiza a página do perfil do usuário
+func CarregarPerfilDoUsuario(w http.ResponseWriter, r *http.Request) {
+	parametros := mux.Vars(r)
+	usuarioID, err := strconv.ParseUint(parametros["usuarioId"], 10, 64)
+	if err != nil {
+		respostas.JSON(w, http.StatusBadRequest, respostas.ErroAPI{Erro: err.Error()})
+		return
+	}
+
+	usuario, err := models.BuscarUsuarioCompleto(usuarioID, r)
+	fmt.Println(usuario, err)
 }
