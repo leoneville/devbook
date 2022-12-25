@@ -12,7 +12,7 @@ function pararDeSeguir() {
         window.location = `/usuarios/${usuarioId}`
     }).fail(function () {
         Swal.fire("Ops...", "Erro ao parar de seguir o usuário", "error")
-        $(this).prop('disabled', false)
+        $('#parar-de-seguir').prop('disabled', false)
     })
 }
 
@@ -27,6 +27,6 @@ function seguir() {
         window.location = `/usuarios/${usuarioId}`
     }).fail(function () {
         Swal.fire("Ops...", "Erro ao seguir o usuário", "error")
-        $(this).prop('disabled', false)
+        $('#seguir').prop('disabled', false)
     })
 }
