@@ -24,25 +24,19 @@ type Usuario struct {
 
 // BuscarUsuarioCompleto faz 4 requisições na API para montar o usuário
 func BuscarUsuarioCompleto(usuarioID uint64, r *http.Request) (Usuario, error) {
-	var err error
 
 	canalUsuario := make(chan Usuario)
 	canalSeguidores := make(chan []Usuario)
 	canalSeguindo := make(chan []Usuario)
 	canalPublicacoes := make(chan []Publicacao)
 
-	go func() {
-		err = BuscarDadosDoUsuario(canalUsuario, usuarioID, r)
-	}()
-	go func() {
-		err = BuscarSeguidores(canalSeguidores, usuarioID, r)
-	}()
-	go func() {
-		err = BuscarSeguindo(canalSeguindo, usuarioID, r)
-	}()
-	go func() {
-		err = BuscarPublicacoes(canalPublicacoes, usuarioID, r)
-	}()
+	go BuscarDadosDoUsuario(canalUsuario, usuarioID, r)
+
+	go BuscarSeguidores(canalSeguidores, usuarioID, r)
+
+	go BuscarSeguindo(canalSeguindo, usuarioID, r)
+
+	go BuscarPublicacoes(canalPublicacoes, usuarioID, r)
 
 	var (
 		usuario     Usuario
@@ -54,28 +48,28 @@ func BuscarUsuarioCompleto(usuarioID uint64, r *http.Request) (Usuario, error) {
 	for i := 0; i < 4; i++ {
 		select {
 		case usuarioCarregado := <-canalUsuario:
-			if usuarioCarregado.ID == 0 && err != nil {
+			if usuarioCarregado.ID == 0 {
 				return Usuario{}, errors.New("erro ao buscar o usuário")
 			}
 
 			usuario = usuarioCarregado
 
 		case seguidoresCarregados := <-canalSeguidores:
-			if seguidoresCarregados == nil && err != nil {
+			if seguidoresCarregados == nil {
 				return Usuario{}, errors.New("erro ao buscar os seguidores")
 			}
 
 			seguidores = seguidoresCarregados
 
 		case seguindoCarregados := <-canalSeguindo:
-			if seguindoCarregados == nil && err != nil {
+			if seguindoCarregados == nil {
 				return Usuario{}, errors.New("erro ao buscar quem o usuário está seguindo")
 			}
 
 			seguindo = seguindoCarregados
 
 		case publicacoesCarregadas := <-canalPublicacoes:
-			if publicacoesCarregadas == nil && err != nil {
+			if publicacoesCarregadas == nil {
 				return Usuario{}, errors.New("erro ao buscar publicações")
 			}
 
@@ -91,35 +85,33 @@ func BuscarUsuarioCompleto(usuarioID uint64, r *http.Request) (Usuario, error) {
 }
 
 // BuscarDadosDoUsuario chama a API para buscar os dados base do usuário
-func BuscarDadosDoUsuario(canal chan<- Usuario, usuarioID uint64, r *http.Request) error {
+func BuscarDadosDoUsuario(canal chan<- Usuario, usuarioID uint64, r *http.Request) {
 	url := fmt.Sprintf("%s/usuarios/%d", config.APIURL, usuarioID)
 
 	response, err := requisicoes.FazerRequisicaoComAutenticacao(r, http.MethodGet, url, nil)
 	if err != nil {
 		canal <- Usuario{}
-		return err
+		return
 	}
 	defer response.Body.Close()
 
 	var usuario Usuario
 	if err = json.NewDecoder(response.Body).Decode(&usuario); err != nil {
 		canal <- Usuario{}
-		return err
+		return
 	}
 
 	canal <- usuario
-
-	return nil
 }
 
 // BuscarSeguidores chama a API para buscar os seguidores do usuário
-func BuscarSeguidores(canal chan<- []Usuario, usuarioID uint64, r *http.Request) error {
+func BuscarSeguidores(canal chan<- []Usuario, usuarioID uint64, r *http.Request) {
 	url := fmt.Sprintf("%s/usuarios/%d/seguidores", config.APIURL, usuarioID)
 
 	response, err := requisicoes.FazerRequisicaoComAutenticacao(r, http.MethodGet, url, nil)
 	if err != nil {
 		canal <- nil
-		return err
+		return
 	}
 	defer response.Body.Close()
 
@@ -127,22 +119,25 @@ func BuscarSeguidores(canal chan<- []Usuario, usuarioID uint64, r *http.Request)
 
 	if err = json.NewDecoder(response.Body).Decode(&seguidores); err != nil {
 		canal <- nil
-		return err
+		return
+	}
+
+	if seguidores == nil {
+		canal <- make([]Usuario, 0)
+		return
 	}
 
 	canal <- seguidores
-
-	return nil
 }
 
 // BuscarSeguindo chama a API para buscar quem o usuário está seguindo
-func BuscarSeguindo(canal chan<- []Usuario, usuarioID uint64, r *http.Request) error {
+func BuscarSeguindo(canal chan<- []Usuario, usuarioID uint64, r *http.Request) {
 	url := fmt.Sprintf("%s/usuarios/%d/seguindo", config.APIURL, usuarioID)
 
 	response, err := requisicoes.FazerRequisicaoComAutenticacao(r, http.MethodGet, url, nil)
 	if err != nil {
 		canal <- nil
-		return err
+		return
 	}
 	defer response.Body.Close()
 
@@ -150,22 +145,25 @@ func BuscarSeguindo(canal chan<- []Usuario, usuarioID uint64, r *http.Request) e
 
 	if err = json.NewDecoder(response.Body).Decode(&seguindo); err != nil {
 		canal <- nil
-		return err
+		return
+	}
+
+	if seguindo == nil {
+		canal <- make([]Usuario, 0)
+		return
 	}
 
 	canal <- seguindo
-
-	return nil
 }
 
 // BuscarPublicacoes chama a API para buscar as publicações de um usuário
-func BuscarPublicacoes(canal chan<- []Publicacao, usuarioID uint64, r *http.Request) error {
+func BuscarPublicacoes(canal chan<- []Publicacao, usuarioID uint64, r *http.Request) {
 	url := fmt.Sprintf("%s/usuarios/%d/publicacoes", config.APIURL, usuarioID)
 
 	response, err := requisicoes.FazerRequisicaoComAutenticacao(r, http.MethodGet, url, nil)
 	if err != nil {
 		canal <- nil
-		return err
+		return
 	}
 	defer response.Body.Close()
 
@@ -173,10 +171,13 @@ func BuscarPublicacoes(canal chan<- []Publicacao, usuarioID uint64, r *http.Requ
 
 	if err = json.NewDecoder(response.Body).Decode(&publicacoes); err != nil {
 		canal <- nil
-		return err
+		return
+	}
+
+	if publicacoes == nil {
+		canal <- make([]Publicacao, 0)
+		return
 	}
 
 	canal <- publicacoes
-
-	return nil
 }
