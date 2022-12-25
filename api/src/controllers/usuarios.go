@@ -292,11 +292,6 @@ func BuscarSeguidores(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(seguidores) <= 0 {
-		respostas.Erro(w, http.StatusNotFound, errors.New("nenhum seguidor foi encontrado"))
-		return
-	}
-
 	respostas.JSON(w, http.StatusOK, seguidores)
 }
 
@@ -320,11 +315,6 @@ func BuscarSeguindo(w http.ResponseWriter, r *http.Request) {
 	usuarios, err := repositorio.BuscarSeguindo(usuarioID)
 	if err != nil {
 		respostas.Erro(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	if len(usuarios) <= 0 {
-		respostas.Erro(w, http.StatusNotFound, errors.New("nenhum seguidor foi encontrado"))
 		return
 	}
 
