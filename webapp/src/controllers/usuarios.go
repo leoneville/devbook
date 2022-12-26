@@ -128,3 +128,34 @@ func EditarUsuario(w http.ResponseWriter, r *http.Request) {
 
 	respostas.JSON(w, response.StatusCode, nil)
 }
+
+// AtualizarSenha chama a API para atualizar a senha do usuário
+func AtualizarSenha(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	senhas, err := json.Marshal(map[string]string{
+		"atual": r.FormValue("atual"),
+		"nova":  r.FormValue("nova"),
+	})
+	if err != nil {
+		respostas.JSON(w, http.StatusBadRequest, respostas.ErroAPI{Erro: err.Error()})
+		return
+	}
+
+	cookie, _ := cookies.Ler(r)
+	usuarioID, _ := strconv.ParseUint(cookie["id"], 10, 64)
+
+	url := fmt.Sprintf("%s/usuarios/%d/atualizar-senha", config.APIURL, usuarioID)
+	response, err := requisicoes.FazerRequisicaoComAutenticacao(r, http.MethodPost, url, bytes.NewBuffer(senhas))
+	if err != nil {
+		respostas.JSON(w, http.StatusInternalServerError, respostas.ErroAPI{Erro: err.Error()})
+		return
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode >= 400 {
+		respostas.TratarStatusCodeDeErro(w, response)
+		return
+	}
+
+	respostas.JSON(w, response.StatusCode, nil)
+}
