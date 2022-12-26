@@ -170,7 +170,7 @@ func BuscarPublicacoes(canal chan<- []Publicacao, usuarioID uint64, r *http.Requ
 	var publicacoes []Publicacao
 
 	if err = json.NewDecoder(response.Body).Decode(&publicacoes); err != nil {
-		canal <- nil
+		canal <- make([]Publicacao, 0)
 		return
 	}
 
